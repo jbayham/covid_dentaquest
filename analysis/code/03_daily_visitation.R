@@ -24,7 +24,7 @@ daily_visits_total <- daily_dentists %>%
 
 max_date <- max(daily_visits_total$date)
 
-daily_visits_total %>%
+daily_visit <- daily_visits_total %>%
   filter(year(date)>2018) %>%
   mutate(year=year(date),
          date=as_date(str_replace(date,"2019","2020"))) %>%
@@ -35,11 +35,20 @@ daily_visits_total %>%
   theme_classic(base_size = 15) +
   scale_color_manual(name="",values = dq_colors) +
   scale_y_continuous(labels = scales::percent) +
-  scale_x_date(date_breaks = "1 month",date_labels = "%b") +
+  scale_x_date(date_breaks = "1 month",date_labels = "%b") 
+
+daily_visit +
   labs(x="",y="",subtitle = "Dental Office Visitation Rate")
 
-ggsave("outputs/daily_visits_national.png",width = 6,height = 4,units = "in")
-ggsave("outputs/daily_visits_national.pdf",width = 6,height = 4,units = "in")
+ggsave("outputs/images/fig1-daily_visits_national.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/fig1-daily_visits_national.pdf",width = 6,height = 4,units = "in")
+
+
+daily_visit +
+  labs(x="",y="Visitation Rate")
+
+ggsave("outputs/images/fig1-daily_visits_national_notitle.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/fig1-daily_visits_national_notitle.pdf",width = 6,height = 4,units = "in")
 
 fwrite(daily_visits_total,file = "outputs/data_share/daily_visit_count.csv")
 
@@ -56,8 +65,6 @@ home_summary_county <- home_summary %>%
 
 ###########################################################
 #Visits by metro
-
-
 
 daily_dentist_metro <- 
   merge.data.table(daily_dentists,
@@ -86,19 +93,29 @@ metro_plot <- daily_dentist_metro %>%
          date=as_date(str_replace(date,"2019","2020"))) %>%
   filter(date<max_date) 
 
-metro_plot %>%
+met_plot <- metro_plot %>%
   ggplot(.,aes(x=date,y=visits,color=factor(year))) +
   geom_smooth() +
   theme_classic(base_size = 15) +
   scale_color_manual(name="",values = dq_colors) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_date(date_breaks = "2 month",date_labels = "%b") +
-  labs(x="",y="",subtitle = "Dental Office Visitation Rate") +
   facet_wrap(~metro) +
   theme(panel.spacing = unit(2, "lines"))
 
-ggsave("outputs/daily_visits_metro.png",width = 8,height = 4,units = "in")
-ggsave("outputs/daily_visits_metro.pdf",width = 8,height = 4,units = "in")
+met_plot +
+  labs(x="",y="",subtitle = "Dental Office Visitation Rate") 
+
+ggsave("outputs/images/fig2-daily_visits_metro.png",width = 8,height = 4,units = "in")
+ggsave("outputs/images/fig2-daily_visits_metro.pdf",width = 8,height = 4,units = "in")
+
+
+met_plot +
+  labs(x="",y="Visitation Rate") 
+
+ggsave("outputs/images/fig2-daily_visits_metro_notitle.png",width = 8,height = 4,units = "in")
+ggsave("outputs/images/fig2-daily_visits_metro_notitle.pdf",width = 8,height = 4,units = "in")
+
 
 fwrite(metro_plot,file = "outputs/data_share/daily_visit_metro.csv")
 

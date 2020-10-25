@@ -18,10 +18,10 @@ weekly <- dir("build/cache/weekly/",full.names = T) %>%
   })  
 
 weekly_distance <- as.data.table(weekly) %>% 
-  merge.data.table(.,as.data.table(poi_subset)[str_detect(top_category,"Dentist"),.(safegraph_place_id)],by = c("safegraph_place_id")) %>%
-  .[!is.na(distance_from_home) | isnt_out_z(distance_from_home,2),  #checked for influence of outliers 3 sd away from mean
+  merge.data.table(.,as.data.table(poi_subset)[str_detect(top_category,"Dentist") & region!="CA",.(safegraph_place_id)],by = c("safegraph_place_id")) %>%
+  .[!is.na(distance_from_home) | isnt_out_z(distance_from_home,3) ,  #checked for influence of outliers 3 sd away from mean
     .(distance=weighted.mean(distance_from_home,raw_visit_counts)/1609),
-    #.(distance=mean(distance_from_home)/1609)#,
+    #.(distance=mean(distance_from_home)/1609),
     by=.(date=date_start)
     ]
 
@@ -29,7 +29,7 @@ fwrite(weekly_distance,file = "outputs/data_share/weekly_distance.csv")
 
 max_date <- max(weekly_distance$date)
 
-weekly_distance %>%
+nat_dist <- weekly_distance %>%
   filter(year(date)>2018) %>%
   mutate(year=year(date),
          # date=as_date(ifelse(year<2020,date+365,date))) %>%
@@ -43,11 +43,51 @@ weekly_distance %>%
   theme_classic(base_size = 15) +
   scale_color_manual(name="",values = dq_colors) +
   scale_x_date(date_breaks = "1 month",date_labels = "%b") +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x="",y="",title = "Average Miles Traveled to Dentist Office")
+  scale_y_continuous(labels = scales::comma) 
 
-ggsave("outputs/distance_national.png",width = 6,height = 4,units = "in")
-ggsave("outputs/distance_national.pdf",width = 6,height = 4,units = "in")
+nat_dist +
+  labs(x="",y="",title = "Average Miles Traveled to Dental Office")
+
+ggsave("outputs/images/fig3-distance_national.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/fig3-distance_national.pdf",width = 6,height = 4,units = "in")
+
+
+nat_dist +
+  labs(x="",y="Distance (Miles)")
+
+ggsave("outputs/images/fig3-distance_national_notitle.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/fig3-distance_national_notitle.pdf",width = 6,height = 4,units = "in")
+
+######################
+#Appendix fig
+nat_dist <- weekly_distance %>%
+  filter(year(date)>2018) %>%
+  mutate(year=year(date),
+         # date=as_date(ifelse(year<2020,date+365,date))) %>%
+         date=as_date(str_replace(date,"2019","2020"))) %>%
+  filter(date<max_date) %>%
+  ggplot(.,aes(x=date,y=distance,color=factor(year))) +
+  #geom_col(width = 0) +
+  geom_line(alpha=.3) +
+  #geom_smooth(method = "gam",formula = y ~ splines::bs(x,3)) +
+  geom_smooth() +
+  theme_classic(base_size = 15) +
+  scale_color_manual(name="",values = dq_colors) +
+  scale_x_date(date_breaks = "1 month",date_labels = "%b") +
+  scale_y_continuous(labels = scales::comma) 
+
+nat_dist +
+  labs(x="",y="",title = "Average Miles Traveled to Dental Office")
+
+ggsave("outputs/images/appendix-distance_national.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/appendix-distance_national.pdf",width = 6,height = 4,units = "in")
+
+nat_dist +
+  labs(x="",y="Distance (Miles)")
+
+ggsave("outputs/images/appendix-distance_national_notitle.png",width = 6,height = 4,units = "in")
+ggsave("outputs/images/appendix-distance_national_notitle.pdf",width = 6,height = 4,units = "in")
+
 
 #######################
 weekly_distance <- as.data.table(weekly) %>%
@@ -94,13 +134,15 @@ weekly_distance <- as.data.table(weekly) %>%
   as.data.table() %>%
   .[,
     .(distance=weighted.mean(distance,pop)),
-    by=.(date,metro)]
+    by=.(date,metro)] %>%
+  mutate(metro=case_when(metro=="Metro" ~ "Metropolitan",
+                         metro=="Non-Metro" ~ "Nonmetropolitan"))
 
 fwrite(weekly_distance,file = "outputs/data_share/weekly_distance_metro.csv")
 
 max_date <- max(weekly_distance$date)
 
-weekly_distance %>%
+metro_dist <- weekly_distance %>%
   filter(year(date)>2018) %>%
   mutate(year=year(date),
          # date=as_date(ifelse(year<2020,date+365,date))) %>%
@@ -113,12 +155,20 @@ weekly_distance %>%
   geom_smooth() +
   theme_classic(base_size = 15) +
   scale_color_manual(name="",values = dq_colors) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x="",y="",title = "Average Miles Traveled to Dentist Office") +
+  scale_y_continuous(labels = scales::comma)  +
   facet_wrap(~metro,ncol = 2)
 
-ggsave("outputs/distance_metro.png",width = 7,height = 4,units = "in")
-ggsave("outputs/distance_metro.pdf",width = 7,height = 4,units = "in")
+metro_dist +
+  labs(x="",y="",title = "Average Miles Traveled to Dental Office")
+
+ggsave("outputs/images/fig4-distance_metro.png",width = 7,height = 4,units = "in")
+ggsave("outputs/images/fig4-distance_metro.pdf",width = 7,height = 4,units = "in")
+
+metro_dist +
+  labs(x="",y="Distance (Miles)")
+
+ggsave("outputs/images/fig4-distance_metro_notitle.png",width = 7,height = 4,units = "in")
+ggsave("outputs/images/fig4-distance_metro_notitle.pdf",width = 7,height = 4,units = "in")
 
 
 weekly_distance %>%
