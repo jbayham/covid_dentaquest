@@ -18,7 +18,7 @@ weekly <- dir("build/cache/weekly/",full.names = T) %>%
   })  
 
 weekly_distance <- as.data.table(weekly) %>% 
-  merge.data.table(.,as.data.table(poi_subset)[str_detect(top_category,"Dentist") & region!="CA",.(safegraph_place_id)],by = c("safegraph_place_id")) %>%
+  merge.data.table(.,as.data.table(poi_subset)[str_detect(top_category,"Dentist"),.(safegraph_place_id)],by = c("safegraph_place_id")) %>%
   .[!is.na(distance_from_home) | isnt_out_z(distance_from_home,3) ,  #checked for influence of outliers 3 sd away from mean
     .(distance=weighted.mean(distance_from_home,raw_visit_counts)/1609),
     #.(distance=mean(distance_from_home)/1609),
@@ -60,6 +60,14 @@ ggsave("outputs/images/fig3-distance_national_notitle.pdf",width = 6,height = 4,
 
 ######################
 #Appendix fig
+weekly_distance <- as.data.table(weekly) %>% 
+  merge.data.table(.,as.data.table(poi_subset)[str_detect(top_category,"Dentist") & region!="CA",.(safegraph_place_id)],by = c("safegraph_place_id")) %>%
+  .[!is.na(distance_from_home) | isnt_out_z(distance_from_home,3) ,  #checked for influence of outliers 3 sd away from mean
+    .(distance=weighted.mean(distance_from_home,raw_visit_counts)/1609),
+    #.(distance=mean(distance_from_home)/1609),
+    by=.(date=date_start)
+    ]
+
 nat_dist <- weekly_distance %>%
   filter(year(date)>2018) %>%
   mutate(year=year(date),

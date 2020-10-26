@@ -84,7 +84,9 @@ daily_dentist_metro <-
   as.data.table() %>%
   .[,
     .(visits=sum(visits)/sum(devices)),
-    by=.(date,metro)]
+    by=.(date,metro)] %>%
+  mutate(metro=case_when(metro=="Metro" ~ "Metropolitan",
+                         metro=="Non-Metro" ~ "Nonmetropolitan"))
   
   
 metro_plot <- daily_dentist_metro %>%
